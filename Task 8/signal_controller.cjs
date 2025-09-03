@@ -10,12 +10,18 @@ const client = jayson.Client.http({
   port: 3000,
 });
 
-STATUS = {
-  p12: "RED",
-  p34: "GREEN",
-  s12: "GREEN",
-  s34: "RED",
-};
+let STATUS1 = { p12: "RED", p34: "GREEN", s12: "GREEN", s34: "RED" };
+let STATUS2 = { p12: "RED", p34: "GREEN", s12: "GREEN", s34: "RED" };
+let STATUS3 = { p12: "RED", p34: "GREEN", s12: "GREEN", s34: "RED" };
+
+let STATUS = [STATUS1, STATUS2, STATUS3];
+
+// ✅ Function to update all STATUS objects together
+function updateAllStatus(key, value) {
+  for (let i = 0; i < STATUS.length; i++) {
+    STATUS[i][key] = value;
+  }
+}
 
 const GetSignal = (num) => {
   if (num === 1 || num === 2) {
@@ -27,10 +33,15 @@ const GetSignal = (num) => {
 
 function PedestrianController(signal) {
   if (signal === 1) {
-    STATUS["p12"] = "RED";
-    STATUS["p34"] = "GREEN";
+    updateAllStatus("p12", "RED");
+    updateAllStatus("p34", "GREEN");
     console.log("Pedestrian signal for road 1 and 2 is RED");
     console.log("Pedestrian signal for road 3 and 4 is GREEN");
+  } else if (signal === 3) {
+    updateAllStatus("p12", "GREEN");
+    updateAllStatus("p34", "RED");
+    console.log("Pedestrian signal for road 1 and 2 is GREEN");
+    console.log("Pedestrian signal for road 3 and 4 is RED");
   }
 }
 
@@ -48,41 +59,36 @@ async function signalController() {
 
     const [signal1] = GetSignal(response.result);
 
-    // means we need to green signal for 1 and 2 road
     if (signal1 === 1) {
-      if (STATUS["s12"] === "GREEN") {
-        // no issues
+      if (STATUS[0]["s12"] === "GREEN") {
         console.log("No changes required, signal 1 and 2 are already GREEN");
-        STATUS["s34"] = "RED";
+        updateAllStatus("s34", "RED");
         PedestrianController(signal1);
         console.log("Current Status:", STATUS);
         console.log();
-      } else if (STATUS["s12"] === "RED") {
-        // chanege the signal
+      } else if (STATUS[0]["s12"] === "RED") {
         console.log("Changing signal for road 1 and 2 to GREEN");
-        STATUS["s12"] = "YELLOW";
+        updateAllStatus("s12", "YELLOW");
         await sleep(2000);
-        STATUS["s12"] = "GREEN";
-        STATUS["s34"] = "RED";
+        updateAllStatus("s12", "GREEN");
+        updateAllStatus("s34", "RED");
         PedestrianController(signal1);
         console.log("Current Status:", STATUS);
         console.log();
       }
     } else if (signal1 === 3) {
-      if (STATUS["s34"] === "GREEN") {
-        // no issues
+      if (STATUS[0]["s34"] === "GREEN") {
         console.log("No changes required, signal 3 and 4 are already GREEN");
-        STATUS["s12"] = "RED";
+        updateAllStatus("s12", "RED");
         PedestrianController(signal1);
         console.log("Current Status:", STATUS);
         console.log();
-      } else if (STATUS["s34"] === "RED") {
-        // change the signal
+      } else if (STATUS[0]["s34"] === "RED") {
         console.log("Changing signal for road 3 and 4 to GREEN");
-        STATUS["s34"] = "YELLOW";
+        updateAllStatus("s34", "YELLOW");
         await sleep(2000);
-        STATUS["s34"] = "GREEN";
-        STATUS["s12"] = "RED";
+        updateAllStatus("s34", "GREEN");
+        updateAllStatus("s12", "RED");
         PedestrianController(signal1);
         console.log("Current Status:", STATUS);
         console.log();
@@ -112,15 +118,14 @@ rl.question(
             console.log("Invalid road number. Please choose between 1 to 4");
           } else {
             const road_num = parseInt(road);
-            ManualController(road_num, STATUS,sleep,PedestrianController);
+            ManualController(road_num, STATUS, sleep, PedestrianController);
             rl.close();
           }
         }
       );
-    }
-    else if (mode.toLowerCase() === "exit"){
-        rl.close();
-        process.exit(0);
+    } else if (mode.toLowerCase() === "exit") {
+      rl.close();
+      process.exit(0);
     }
   }
 );

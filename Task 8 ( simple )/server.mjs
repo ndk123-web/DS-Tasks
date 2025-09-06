@@ -29,14 +29,14 @@ const sleep = async (ms) => {
   });
 };
 
-const manual = async ({ road }) => {
+const manual = async ({ roadToGreen }) => {
   console.log("Before Manual Status: ", STATUS)
-  console.log("Road To Be Green : ", road);
+  console.log("Road To Be Green : ", roadToGreen);
 
-  const [roadToGreen] = selectRoad(road)
-  console.log("Road to Green: ", roadToGreen)
+  const [road] = selectRoad(parseInt(roadToGreen))
+  console.log("Road to Green: ", road)
 
-  if (roadToGreen === 1) {
+  if (road === 1) {
     if (STATUS.s12 === "GREEN") {
       console.log("No Worries")
       STATUS.s34 = "RED"
@@ -55,7 +55,7 @@ const manual = async ({ road }) => {
     }
   }
 
-  else if (roadToGreen === 3) {
+  else if (road === 3) {
     if (STATUS.s34 === "GREEN") {
       console.log("No Worries")
       STATUS.s12 = "RED"

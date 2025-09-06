@@ -48,7 +48,7 @@ const main = async (count) => {
                 const response = await client.request({
                     method: 'manual',
                     params: {
-                        road: road
+                        roadToGreen: road
                     }
                 })
                 console.log("Response: ", response);

@@ -7,6 +7,8 @@ const server = new ndk_rpc_server({
 const STATUS = {
   s12: "RED",
   s34: "GREEN",
+  p12: "GREEN",
+  p34: "RED"
 }
 
 const selectRoad = (road) => {
@@ -37,7 +39,8 @@ const signal_controller = async () => {
     if (STATUS.s12 === "GREEN") {
       console.log("No Worries")
       STATUS.s34 = "RED"
-
+      STATUS.p34 = "GREEN"
+      STATUS.p12 = "RED"
       console.log("STATUS: ", STATUS)
       await sleep(2000)
     }
@@ -46,7 +49,7 @@ const signal_controller = async () => {
       await sleep(2000)
       STATUS.s12 = "GREEN"
       STATUS.s34 = "RED"
-    
+      pedestrian_controller({ road: road })
       console.log("STATUS: ", STATUS)
       await sleep(2000)
     }
@@ -56,7 +59,8 @@ const signal_controller = async () => {
     if (STATUS.s34 === "GREEN") {
       console.log("No Worries")
       STATUS.s12 = "RED"
-   
+      STATUS.p12 = "GREEN"
+      STATUS.p34 = "RED"
       console.log("STATUS: ", STATUS)
       await sleep(2000)
     }
@@ -66,7 +70,7 @@ const signal_controller = async () => {
       STATUS.s34 = "GREEN"
       STATUS.s12 = "RED"
 
-    
+      pedestrian_controller({ road: road })
 
       console.log("STATUS: ", STATUS)
       await sleep(2000)
@@ -81,6 +85,17 @@ const signal_manipulator = () => {
   return random;
 }
 
+const pedestrian_controller = ({ road }) => {
+  if (road === 1) {
+    STATUS.p12 = "GREEN"
+    STATUS.p34 = "RED"
+  }
+  else if (road === 3) {
+    STATUS.p12 = "RED"
+    STATUS.p34 = "GREEN"
+  }
+}
+
 
 await server.register_functions([
   {
@@ -91,6 +106,10 @@ await server.register_functions([
     function_name: "signal_manipulator",
     function_block: signal_manipulator
   },
+  {
+    function_name: "pedestrian_controller",
+    function_block: pedestrian_controller
+  }
 ])
 
 await server.start();

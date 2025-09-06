@@ -91,10 +91,6 @@ await server.register_functions([
     function_name: "signal_manipulator",
     function_block: signal_manipulator
   },
-  {
-    function_name: "pedestrian_controller",
-    function_block: pedestrian_controller
-  }
 ])
 
 await server.start();

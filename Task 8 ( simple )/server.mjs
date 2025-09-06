@@ -11,6 +11,21 @@ const STATUS = {
   p34: "RED"
 }
 
+const REPLICAS = [STATUS, STATUS, STATUS]
+
+const updateReplicas = async ({ type, road, value }) => {
+  let signalType = type === 'SIGNAL' ? 'SIGNAL' : 'PEDESTRIAN'
+
+  console.log("Updating REPLICAS for ", signalType, "Road: ", road, "Value: ", value)
+
+  for (let i = 0; i < REPLICAS.length; i++) {
+    REPLICAS[i][road] = value
+  }
+
+  console.log("Done with Updating Replicas of ", signalType, "Road: ", road, "Value: ", value)
+  console.log("CURRENT REPLICAS: ", REPLICAS)
+}
+
 const selectRoad = (road) => {
   if (road === 1 || road === 2) {
     return [1, 2]
@@ -40,15 +55,24 @@ const manual = async ({ roadToGreen }) => {
     if (STATUS.s12 === "GREEN") {
       console.log("No Worries")
       STATUS.s34 = "RED"
+
+      updateReplicas({ type: 'SIGNAL', road: 's34', value: "RED" })
+
       pedestrian_controller({ road: roadToGreen })
       console.log("STATUS: ", STATUS)
       await sleep(2000)
     }
     else {
       STATUS.s12 = "YELLOW"
+      updateReplicas({ type: "SIGNAL", road: "s12", value: "YELLOW" })
       await sleep(2000)
+
       STATUS.s12 = "GREEN"
+      updateReplicas({ type: "SIGNAL", road: "s12", value: "GREEN" })
+
       STATUS.s34 = "RED"
+      updateReplicas({ type: "SIGNAL", road: "s34", value: "RED" })
+
       pedestrian_controller({ road: roadToGreen })
       console.log("STATUS: ", STATUS)
       await sleep(2000)
@@ -58,19 +82,25 @@ const manual = async ({ roadToGreen }) => {
   else if (road === 3) {
     if (STATUS.s34 === "GREEN") {
       console.log("No Worries")
+
       STATUS.s12 = "RED"
+      updateReplicas({ type: "SIGNAL", road: "s12", value: "RED" })
+
       pedestrian_controller({ road: roadToGreen })
       console.log("STATUS: ", STATUS)
       await sleep(2000)
     }
     else {
       STATUS.s34 = "YELLOW"
+      updateReplicas({ type: "SIGNAL", road: "s34", value: "YELLOW" })
       await sleep(2000)
+
       STATUS.s34 = "GREEN"
+      updateReplicas({ type: "SIGNAL", road: "s34", value: "GREEN" })
       STATUS.s12 = "RED"
+      updateReplicas({ type: "SIGNAL", road: "s12", value: "RED" })
 
       pedestrian_controller({ road: roadToGreen })
-
       console.log("STATUS: ", STATUS)
       await sleep(2000)
     }
@@ -137,10 +167,16 @@ const pedestrian_controller = ({ road }) => {
   if (road === 1) {
     STATUS.p12 = "GREEN"
     STATUS.p34 = "RED"
+
+    updateReplicas({ type: "PEDESTRIAN", road: 'p12', value: "GREEN" })
+    updateReplicas({ type: "PEDESTRIAN", road: 'p34', value: "RED" })
   }
   else if (road === 3) {
     STATUS.p12 = "RED"
     STATUS.p34 = "GREEN"
+
+    updateReplicas({ type: "PEDESTRIAN", road: 'p12', value: "RED" })
+    updateReplicas({ type: "PEDESTRIAN", road: 'p34', value: "GREEN" })
   }
 }
 

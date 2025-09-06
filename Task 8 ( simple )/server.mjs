@@ -49,7 +49,7 @@ const manual = async ({ roadToGreen }) => {
   console.log("Road To Be Green : ", roadToGreen);
 
   const [road] = selectRoad(parseInt(roadToGreen))
-  console.log("Road to Green: ", road)
+  console.log("Road to Green: ", road, " ", road + 1)
 
   if (road === 1) {
     if (STATUS.s12 === "GREEN") {
@@ -117,16 +117,24 @@ const signal_controller = async () => {
     if (STATUS.s12 === "GREEN") {
       console.log("No Worries")
       STATUS.s34 = "RED"
-      STATUS.p34 = "GREEN"
-      STATUS.p12 = "RED"
+      updateReplicas({ type: 'SIGNAL', road: 's34', value: "RED" })
+
+      pedestrian_controller({ road: road })
       console.log("STATUS: ", STATUS)
       await sleep(2000)
     }
     else {
       STATUS.s12 = "YELLOW"
+      updateReplicas({ type: 'SIGNAL', road: 's12', value: "YELLOW" })
+
       await sleep(2000)
+
       STATUS.s12 = "GREEN"
+      updateReplicas({ type: 'SIGNAL', road: 's12', value: "GREEN" })
+
       STATUS.s34 = "RED"
+      updateReplicas({ type: 'SIGNAL', road: 's34', value: "RED" })
+
       pedestrian_controller({ road: road })
       console.log("STATUS: ", STATUS)
       await sleep(2000)
@@ -136,17 +144,30 @@ const signal_controller = async () => {
   else if (road === 3) {
     if (STATUS.s34 === "GREEN") {
       console.log("No Worries")
+
       STATUS.s12 = "RED"
+      updateReplicas({ type: 'SIGNAL', road: 's12', value: "RED" })
+
       STATUS.p12 = "GREEN"
+      updateReplicas({ type: 'PEDESTRIAN', road: 'p12', value: "GREEN" })
+
       STATUS.p34 = "RED"
+      updateReplicas({ type: 'PEDESTRIAN', road: 'p34', value: "RED" })
+
       console.log("STATUS: ", STATUS)
       await sleep(2000)
     }
     else {
       STATUS.s34 = "YELLOW"
+      updateReplicas({ type: 'SIGNAL', road: 's34', value: "YELLOW" })
+
       await sleep(2000)
+
       STATUS.s34 = "GREEN"
+      updateReplicas({ type: 'SIGNAL', road: 's34', value: "GREEN" })
+
       STATUS.s12 = "RED"
+      updateReplicas({ type: 'SIGNAL', road: 's12', value: "RED" })
 
       pedestrian_controller({ road: road })
 

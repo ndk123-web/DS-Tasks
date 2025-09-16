@@ -29,6 +29,11 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // Public RPC: get current status (Task 2/3 compatible shape)
 const get_current_status = () => ({ result: { ...STATUS }, message: "success" });
 
+// Assignment API compatibility
+const signal_controller = async () => ({ result: { ...STATUS }, message: "success" });
+const signal_manipulator = () => (STATUS.s12 === "GREEN" || STATUS.s12 === "YELLOW" ? 3 : 1);
+const pedestrian_controller = ({ road }) => ({ result: { ok: true, road }, message: "noop" });
+
 // Deterministic sequencer like Task 2: Road 12 -> yellow -> Road 34 -> yellow -> repeat
 const GREEN_MS = 8000; // 8s green
 const YELLOW_MS = 2000; // 2s yellow
@@ -78,6 +83,9 @@ await server.register_functions([
     function_name: "get_current_status",
     function_block: get_current_status,
   },
+  { function_name: "signal_controller", function_block: signal_controller },
+  { function_name: "signal_manipulator", function_block: signal_manipulator },
+  { function_name: "pedestrian_controller", function_block: pedestrian_controller },
 ]);
 
 await server.start();

@@ -1,96 +1,64 @@
 import ndk_rpc_server from "ndk-rpc-engine/server";
 
-const server = new ndk_rpc_server({
-  port: 3000
-})
+// Create RPC server
+const server = new ndk_rpc_server({ port: 3000 });
 
+// Traffic signal states for Road 12 and Road 34
 const STATUS = {
-  s12: "RED",
-  s34: "GREEN",
-}
-
-const selectRoad = (road) => {
-  if (road === 1 || road === 2) {
-    return [1, 2]
-  }
-  else {
-    return [3, 4]
-  }
-}
-
-const sleep = async (ms) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log("STATUS: ", STATUS);
-      resolve(); // yaha resolve karna zaroori hai
-    }, ms);
-  });
+  s12: "GREEN", // Start with Road 12 GREEN
+  s34: "RED",
 };
 
+// Durations (ms)
+const GREEN_MS = 8000; // 8 seconds green
+const YELLOW_MS = 2000; // 2 seconds yellow
 
-const signal_controller = async () => {
-  const randomRoad = signal_manipulator()
-  console.log("Random Road : ", randomRoad)
-  const [road] = selectRoad(randomRoad)
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  if (road === 1) {
-    if (STATUS.s12 === "GREEN") {
-      console.log("No Worries")
-      STATUS.s34 = "RED"
+// Public RPC: get current status
+const get_current_status = () => ({ result: { ...STATUS }, message: "success" });
 
-      console.log("STATUS: ", STATUS)
-      await sleep(2000)
-    }
-    else {
-      STATUS.s12 = "YELLOW"
-      await sleep(2000)
-      STATUS.s12 = "GREEN"
-      STATUS.s34 = "RED"
-    
-      console.log("STATUS: ", STATUS)
-      await sleep(2000)
-    }
+// Background loop to alternate signals automatically
+let loopRunning = false;
+const startSignalLoop = async () => {
+  if (loopRunning) return;
+  loopRunning = true;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    // Phase: Road 12 GREEN, Road 34 RED
+    STATUS.s12 = "GREEN";
+    STATUS.s34 = "RED";
+    await sleep(GREEN_MS);
+
+    // Transition: Road 12 YELLOW, Road 34 remains RED
+    STATUS.s12 = "YELLOW";
+    STATUS.s34 = "RED";
+    await sleep(YELLOW_MS);
+
+    // Switch: Road 12 RED, Road 34 GREEN
+    STATUS.s12 = "RED";
+    STATUS.s34 = "GREEN";
+    await sleep(GREEN_MS);
+
+    // Transition: Road 34 YELLOW, Road 12 remains RED
+    STATUS.s34 = "YELLOW";
+    STATUS.s12 = "RED";
+    await sleep(YELLOW_MS);
   }
+};
 
-  else if (road === 3) {
-    if (STATUS.s34 === "GREEN") {
-      console.log("No Worries")
-      STATUS.s12 = "RED"
-   
-      console.log("STATUS: ", STATUS)
-      await sleep(2000)
-    }
-    else {
-      STATUS.s34 = "YELLOW"
-      await sleep(2000)
-      STATUS.s34 = "GREEN"
-      STATUS.s12 = "RED"
-
-    
-
-      console.log("STATUS: ", STATUS)
-      await sleep(2000)
-    }
-  }
-  return {...STATUS , roadToGreen: road}
-}
-
-// Generate Random Function 
-const signal_manipulator = () => {
-  const random = parseInt(Math.floor(Math.random() * 4) + 1)
-  return random;
-}
-
-
+// Register only the status function for clients
 await server.register_functions([
   {
-    function_name: "signal_controller",
-    function_block: signal_controller
+    function_name: "get_current_status",
+    function_block: get_current_status,
   },
-  {
-    function_name: "signal_manipulator",
-    function_block: signal_manipulator
-  },
-])
+]);
 
 await server.start();
+
+// Start automatic controller loop
+startSignalLoop();
+
+// Minimal startup log
+console.log("Traffic Controller Server running on port 3000");

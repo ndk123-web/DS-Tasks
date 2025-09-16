@@ -14,20 +14,26 @@ const STATUS = {
 let SIGNAL_LOCK = false;
 let PEDESTRIAN_LOCK = false;
 let DEADLOCK = false;
+let SIGNAL_OWNER = null; // 'cars' or 'peds'
+let PED_OWNER = null;    // 'cars' or 'peds'
 
-const acquireSignalLock = async () => {
+const acquireSignalLock = async (owner) => {
   while (SIGNAL_LOCK) await new Promise((r) => setTimeout(r, 5));
   SIGNAL_LOCK = true;
+  SIGNAL_OWNER = owner;
 };
 const releaseSignalLock = () => {
   SIGNAL_LOCK = false;
+  SIGNAL_OWNER = null;
 };
-const acquirePedestrianLock = async () => {
+const acquirePedestrianLock = async (owner) => {
   while (PEDESTRIAN_LOCK) await new Promise((r) => setTimeout(r, 5));
   PEDESTRIAN_LOCK = true;
+  PED_OWNER = owner;
 };
 const releasePedestrianLock = () => {
   PEDESTRIAN_LOCK = false;
+  PED_OWNER = null;
 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -42,11 +48,11 @@ const startLoop = async () => {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     // Phase A: acquire both locks (signal -> pedestrian) and HOLD during the phase
-    await acquireSignalLock();
-    await acquirePedestrianLock();
+  await acquireSignalLock('cars');
+  await acquirePedestrianLock('cars');
     STATUS.s12 = "GREEN"; STATUS.s34 = "RED";
     STATUS.p12 = "RED";   STATUS.p34 = "GREEN";
-    DEADLOCK = SIGNAL_LOCK && PEDESTRIAN_LOCK; // both held -> risky state
+  DEADLOCK = SIGNAL_LOCK && PEDESTRIAN_LOCK; // both held -> risky state
     await sleep(GREEN_MS);
 
     // YELLOW for s12, still holding locks
@@ -57,8 +63,8 @@ const startLoop = async () => {
     releaseSignalLock();
 
     // Phase B: acquire in reverse order (pedestrian -> signal) and HOLD
-    await acquirePedestrianLock();
-    await acquireSignalLock();
+  await acquirePedestrianLock('peds');
+  await acquireSignalLock('peds');
     STATUS.s12 = "RED";   STATUS.s34 = "GREEN";
     STATUS.p12 = "GREEN"; STATUS.p34 = "RED";
     DEADLOCK = SIGNAL_LOCK && PEDESTRIAN_LOCK;
@@ -79,7 +85,7 @@ const signal_controller = async () => {
   return {
     result: {
       ...STATUS,
-      locks: { signal: SIGNAL_LOCK, pedestrian: PEDESTRIAN_LOCK },
+      locks: { signal: SIGNAL_LOCK, pedestrian: PEDESTRIAN_LOCK, owners: { signal: SIGNAL_OWNER, pedestrian: PED_OWNER } },
       deadlock: DEADLOCK,
     },
     message: "success",

@@ -82,12 +82,13 @@ const manual = async ({ roadToGreen, auto }) => {
   return { result: { ...STATUS, auto: AUTO }, message: 'manual-updated' };
 };
 
-await server.register_functions([
-  { function_name: 'signal_controller', function_block: signal_controller },
-  { function_name: 'signal_manipulator', function_block: signal_manipulator },
-  { function_name: 'pedestrian_controller', function_block: pedestrian_controller },
-  { function_name: 'manual', function_block: manual },
-]);
-
-await server.start();
-startAutoLoop();
+;(async () => {
+  await server.register_functions([
+    { function_name: 'signal_controller', function_block: signal_controller },
+    { function_name: 'signal_manipulator', function_block: signal_manipulator },
+    { function_name: 'pedestrian_controller', function_block: pedestrian_controller },
+    { function_name: 'manual', function_block: manual },
+  ]);
+  await server.start();
+  startAutoLoop();
+})();

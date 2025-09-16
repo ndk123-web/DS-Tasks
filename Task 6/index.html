@@ -48,6 +48,7 @@
         <div class="meta">
           <div id="lockSignal" class="badge off">Signal Lock: free</div>
           <div id="lockPed" class="badge off">Ped Lock: free</div>
+          <div id="owners" class="badge off">Owners: -</div>
           <div id="deadlock" class="badge off">Deadlock: none</div>
         </div>
       </div>
@@ -66,7 +67,7 @@
   const client = new Client({ server_port: 3006 });
       const el = (id)=>document.getElementById(id);
       const setLight = (node, state)=>{ node.className = `signal-light ${state.toLowerCase()}`; node.textContent = state; };
-      const setBadge = (node, on, label)=>{ node.className = `badge ${on?'on':'off'}`; node.textContent = `${label}: ${on ? 'held' : 'free'}`; };
+  const setBadge = (node, on, label)=>{ node.className = `badge ${on?'on':'off'}`; node.textContent = `${label}: ${on ? 'held' : 'free'}`; };
       const setDead = (node, on)=>{ node.className = `badge ${on?'err':'off'}`; node.textContent = `Deadlock: ${on?'detected':'none'}`; };
       const poll = async ()=>{
         try {
@@ -77,6 +78,8 @@
             setLight(el('ped12'), p12); setLight(el('ped34'), p34);
             setBadge(el('lockSignal'), !!locks.signal, 'Signal Lock');
             setBadge(el('lockPed'), !!locks.pedestrian, 'Ped Lock');
+            const owners = locks.owners || {}; const otext = `Owners: signal=${owners.signal||'-'}, pedestrian=${owners.pedestrian||'-'}`;
+            el('owners').className = 'badge on'; el('owners').textContent = otext;
             setDead(el('deadlock'), !!deadlock);
           }
         } catch {}

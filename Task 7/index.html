@@ -16,6 +16,7 @@
       .red { background: #ff4757; color: #fff; box-shadow: 0 0 16px #ff4757; }
       .yellow { background: #ffa502; box-shadow: 0 0 16px #ffa502; }
       .green { background: #2ed573; box-shadow: 0 0 16px #2ed573; }
+  .unknown { background: #444; color: #fff; box-shadow: 0 0 8px #444; }
       .footer { margin-top: 14px; font-size: 12px; color: #6b7280; }
     </style>
   </head>
@@ -23,6 +24,22 @@
     <div class="wrap">
       <h1>Task 7 - Load Balanced Auto Controller (Roads & Pedestrians)</h1>
       <div class="board">
+        <div class="controls" style="display:flex; gap:12px; align-items:center; margin-bottom:16px">
+          <label>Mode:</label>
+          <select id="mode">
+            <option value="auto" selected>Automatic</option>
+            <option value="manual">Manual</option>
+          </select>
+          <div id="served" style="margin-left:auto; font-size:13px; color:#9aa4af">Served By: -</div>
+        </div>
+        <div class="controls" id="manualControls" style="display:flex; gap:12px; align-items:center; margin-bottom:16px">
+          <label>Pick road group to GREEN:</label>
+          <select id="roadPick">
+            <option value="1">Road 12</option>
+            <option value="3">Road 34</option>
+          </select>
+          <button id="applyBtn">Apply</button>
+        </div>
         <div class="grid">
           <div class="tile">
             <div class="label">Road 12</div>
@@ -44,28 +61,7 @@
         <div class="footer">Auto-switching is served by a load-balanced cluster (via ndk-rpc-cluster). If a replica is down, another serves the request.</div>
       </div>
     </div>
-    <script type="module">
-      class Client {
-        constructor({ host = 'localhost', port = 4000, key }){ this.host=host; this.port=port; this.key=key; }
-        async request({ method, params }){
-          const r = await fetch(`http://${this.host}:${this.port}/api/v1/rpc/${this.key}/run-rpc-method`, {
-            method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ method_name: method, params })
-          });
-          const j = await r.json(); const { data } = j; return data?.data || data; // tolerate wrapper
-        }
-      }
-      const client = new Client({ port: 4000, key: 'AddService' });
-      const el = (id)=>document.getElementById(id);
-      const setLight = (node, state)=>{ node.className = `signal-light ${state.toLowerCase()}`; node.textContent = state; };
-      const poll = async ()=>{
-        try {
-          const resp = await client.request({ method:'signal_controller', params:{} });
-          const { s12, s34, p12, p34 } = resp?.result?.result || {};
-          setLight(el('signal12'), s12); setLight(el('signal34'), s34);
-          setLight(el('ped12'), p12); setLight(el('ped34'), p34);
-        } catch {}
-      };
-      setInterval(poll, 500); poll();
-    </script>
+
+    <script src="./client.mjs"></script>
   </body>
-  </html>
+</html>

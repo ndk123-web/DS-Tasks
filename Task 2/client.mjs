@@ -1,18 +1,71 @@
-import { Client } from "ndk-rpc-engine/client";
+class Client {
+  server_port = "";
+
+  constructor({ server_port }) {
+    this.server_port = server_port || 3000;
+  }
+
+  async request({ method, params }) {
+    try {
+      const server_response = await fetch(
+        `http://localhost:${this.server_port}/api/v1/rpc/run-rpc-method`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ method_name: method, params }),
+        }
+      );
+      if (server_response.status !== 200) {
+        const errorData = await server_response.json();
+        return { message: errorData.message };
+      }
+      const responseData = await server_response.json();
+      let { data, message } = responseData;
+      return { message, ...data };
+    } catch (err) {
+      // DEBUG
+      //   console.log(err);
+      return { message: "Something went wrong while making request to server" };
+    }
+  }
+}
 
 const client = new Client({
-    server_port: 3000
-})
+  server_port: 3000,
+});
 
-setInterval(async () => {
-    try {
-        const response = await client.request({
-            method: "signal_controller",
-            params: {}
-        });
+const signal12 = document.getElementById("signal12");
+const signal34 = document.getElementById("signal34");
 
-        console.log("Response:", response);
-    } catch (err) {
-        console.error("Request failed:", err.message);
+function updateSignal(element, state) {
+  element.className = `signal-light ${state.toLowerCase()}`;
+  element.textContent = state;
+}
+
+// Function to get current status
+const getCurrentStatus = async () => {
+  try {
+    const response = await client.request({
+      method: "get_current_status",
+      params: {},
+    });
+
+    if (response && response.result) {
+      const { s12, s34 } = response.result.result;
+      console.log("Response:", response);
+      console.log("Result:", response.result.result);
+      console.log("Status:", s12, s34);
+      updateSignal(signal12, s12);
+      updateSignal(signal34, s34);
     }
-}, 5000);
+  } catch (err) {
+    // Silently ignore transient fetch errors to keep UI simple
+  }
+};
+
+// Poll status every 500ms to catch YELLOW transitions smoothly
+setInterval(getCurrentStatus, 500);
+// Initial fetch
+getCurrentStatus();

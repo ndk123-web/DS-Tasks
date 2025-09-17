@@ -1,5 +1,12 @@
 # DS Tasks
 
+`First Run the Command Below`
+- Make Sure U have Node js enviroment in your machine
+- if not then download from nodejs webiste 
+```bash
+npm install
+```
+
 ## Titles 
 1. Task 2
    - Normal Signal Controller

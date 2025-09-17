@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task 8 - Auto/Manual Traffic Controller</title>
+    <style>
+      body { font-family: Arial, sans-serif; background: #101418; color: #e8e8e8; margin: 0; }
+      .wrap { max-width: 900px; margin: 40px auto; padding: 0 16px; }
+      h1 { font-size: 22px; margin-bottom: 16px; color: #79ffa8; }
+      .board { background: #161b22; border: 1px solid #2a2f36; border-radius: 10px; padding: 24px; }
+      .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+      .tile { text-align: center; padding: 16px; border: 1px solid #2a2f36; border-radius: 10px; }
+      .label { font-size: 14px; color: #9aa4af; margin-bottom: 10px; }
+      .signal-light { width: 80px; height: 80px; border-radius: 50%; margin: 0 auto; display: grid; place-items: center; font-weight: bold; border: 3px solid #222; color: #000; }
+      .red { background: #ff4757; color: #fff; box-shadow: 0 0 16px #ff4757; }
+      .yellow { background: #ffa502; box-shadow: 0 0 16px #ffa502; }
+      .green { background: #2ed573; box-shadow: 0 0 16px #2ed573; }
+      .controls { display:flex; align-items:center; gap:12px; margin-bottom: 16px; }
+      .footer { margin-top: 14px; font-size: 12px; color: #6b7280; }
+      button, select { background:#0f1419; color:#e8e8e8; border:1px solid #2a2f36; border-radius:8px; padding:8px 12px; }
+      button { cursor:pointer; }
+      .hint { font-size:12px; color:#9aa4af }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Task 8 - Auto/Manual Traffic Controller</h1>
+      <div class="board">
+        <div class="controls">
+          <label>Mode:</label>
+          <select id="mode">
+            <option value="auto" selected>Automatic</option>
+            <option value="manual">Manual</option>
+          </select>
+          <span class="hint">Automatic alternates every 8s GREEN + 2s YELLOW. Manual lets you pick road to GREEN.</span>
+        </div>
+        <div class="controls" id="manualControls" style="display:none">
+          <label>Pick road group to GREEN:</label>
+          <select id="roadPick">
+            <option value="1">Road 12</option>
+            <option value="3">Road 34</option>
+          </select>
+          <button id="applyBtn">Apply</button>
+        </div>
+        <div class="grid">
+          <div class="tile">
+            <div class="label">Road 12</div>
+            <div id="signal12" class="signal-light green">GREEN</div>
+          </div>
+          <div class="tile">
+            <div class="label">Road 34</div>
+            <div id="signal34" class="signal-light red">RED</div>
+          </div>
+          <div class="tile">
+            <div class="label">Pedestrian 12</div>
+            <div id="ped12" class="signal-light red">RED</div>
+          </div>
+          <div class="tile">
+            <div class="label">Pedestrian 34</div>
+            <div id="ped34" class="signal-light green">GREEN</div>
+          </div>
+        </div>
+        <div class="footer">Keep four RPCs: signal_controller, signal_manipulator, pedestrian_controller, manual. Mode toggles via manual(auto:bool).</div>
+      </div>
+    </div>
+    <script type="module">
+      class Client { constructor({ server_port }) { this.server_port = server_port || 3000; } async request({ method, params }) { const r = await fetch(`http://localhost:${this.server_port}/api/v1/rpc/run-rpc-method`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ method_name: method, params }) }); const j = await r.json(); const { data, message } = j; return { message, ...data }; } }
+  const client = new Client({ server_port: 3008 });
+      const el = (id)=>document.getElementById(id);
+      const setLight = (node, state)=>{ node.className = `signal-light ${state.toLowerCase()}`; node.textContent = state; };
+      const refresh = async ()=>{ try { const resp = await client.request({ method: 'signal_controller', params: {} }); if(resp && resp.result){ const { s12, s34, p12, p34, auto } = resp.result.result; setLight(el('signal12'), s12); setLight(el('signal34'), s34); setLight(el('ped12'), p12); setLight(el('ped34'), p34); el('mode').value = auto ? 'auto' : 'manual'; el('manualControls').style.display = auto ? 'none' : 'flex'; } } catch {} };
+      setInterval(refresh, 500); refresh();
+      el('mode').addEventListener('change', async (e)=>{ const auto = e.target.value === 'auto'; await client.request({ method:'manual', params:{ auto } }); await refresh(); });
+      el('applyBtn').addEventListener('click', async ()=>{ const roadToGreen = el('roadPick').value; await client.request({ method:'manual', params:{ auto:false, roadToGreen } }); await refresh(); });
+    </script>
+  </body>
+</html>

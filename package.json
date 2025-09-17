@@ -1,0 +1,25 @@
+{
+  "name": "ds-tasks",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ndk123-web/DS-Tasks.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ndk123-web/DS-Tasks/issues"
+  },
+  "homepage": "https://github.com/ndk123-web/DS-Tasks#readme",
+  "description": "",
+  "dependencies": {
+    "dev-preview": "^1.0.8",
+    "ndk-rpc-cluster": "^1.0.5",
+    "ndk-rpc-engine": "^1.0.5"
+  }
+}

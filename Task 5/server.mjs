@@ -1,161 +1,93 @@
 import ndk_rpc_server from "ndk-rpc-engine/server";
 
-const server = new ndk_rpc_server({
-  port: 3000
-})
+// Create RPC server
+const server = new ndk_rpc_server({ port: 3000 });
 
+// Shared traffic + pedestrian state
 const STATUS = {
-  s12: "RED",
-  s34: "GREEN",
-  p12: "GREEN",
-  p34: "RED"
-}
+  s12: "GREEN", // start with Road 12 green
+  s34: "RED",
+  p12: "RED",   // pedestrians opposite the green road
+  p34: "GREEN",
+};
 
-let LOCK = false
-
+// Mutex (mutual exclusion) for state transitions
+let LOCK = false;
 const acquireLock = async () => {
   while (LOCK) {
-    await new Promise(r => setTimeout(r, 50)); // busy wait
+    // short wait to avoid tight spin
+    await new Promise((r) => setTimeout(r, 10));
   }
   LOCK = true;
 };
-
 const releaseLock = () => {
   LOCK = false;
 };
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const selectRoad = (road) => {
-  if (road === 1 || road === 2) {
-    return [1, 2]
-  }
-  else {
-    return [3, 4]
-  }
-}
+// Public RPC: get current status (Task 2/3 compatible shape)
+const get_current_status = () => ({ result: { ...STATUS }, message: "success" });
 
-const sleep = async (ms) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log("STATUS: ", STATUS);
-      resolve(); // yaha resolve karna zaroori hai
-    }, ms);
-  });
+// Assignment API compatibility
+const signal_controller = async () => ({ result: { ...STATUS }, message: "success" });
+const signal_manipulator = () => (STATUS.s12 === "GREEN" || STATUS.s12 === "YELLOW" ? 3 : 1);
+const pedestrian_controller = ({ road }) => ({ result: { ok: true, road }, message: "noop" });
+
+// Deterministic sequencer like Task 2: Road 12 -> yellow -> Road 34 -> yellow -> repeat
+const GREEN_MS = 8000; // 8s green
+const YELLOW_MS = 2000; // 2s yellow
+
+let loopRunning = false;
+const startSignalLoop = async () => {
+  if (loopRunning) return;
+  loopRunning = true;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    // Phase A: Road 12 GREEN, Road 34 RED, pedestrians follow opposite
+    await acquireLock();
+    STATUS.s12 = "GREEN";
+    STATUS.s34 = "RED";
+    STATUS.p12 = "RED"; // cars on road 12 moving, ped 12 should wait
+    STATUS.p34 = "GREEN"; // road 34 is red for cars, ped 34 can go
+    releaseLock();
+    await sleep(GREEN_MS);
+
+    // Transition: Road 12 YELLOW, Road 34 remains RED, pedestrians unchanged
+    await acquireLock();
+    STATUS.s12 = "YELLOW";
+    STATUS.s34 = "RED";
+    releaseLock();
+    await sleep(YELLOW_MS);
+
+    // Phase B: Road 34 GREEN, Road 12 RED, pedestrians flip
+    await acquireLock();
+    STATUS.s12 = "RED";
+    STATUS.s34 = "GREEN";
+    STATUS.p12 = "GREEN";
+    STATUS.p34 = "RED";
+    releaseLock();
+    await sleep(GREEN_MS);
+
+    // Transition: Road 34 YELLOW, Road 12 remains RED
+    await acquireLock();
+    STATUS.s34 = "YELLOW";
+    STATUS.s12 = "RED";
+    releaseLock();
+    await sleep(YELLOW_MS);
+  }
 };
-
-const signal_controller = async () => {
-  console.log("SIGNAL CONTROLLER ACQUIRING LOCK")
-  await acquireLock()
-  console.log("SIGNAL CONTROLLER ACQUIRED LOCK")
-
-  try {
-    const randomRoad = signal_manipulator()
-    console.log("Random Road : ", randomRoad)
-    const [road] = selectRoad(randomRoad)
-
-    if (road === 1) {
-      if (STATUS.s12 === "GREEN") {
-        console.log("No Worries")
-        STATUS.s34 = "RED"
-
-        await pedestrian_controller({ road: road })
-        console.log("STATUS: ", STATUS)
-        await sleep(2000)
-      }
-      else {
-        STATUS.s12 = "YELLOW"
-
-        await sleep(2000)
-
-        STATUS.s12 = "GREEN"
-
-        STATUS.s34 = "RED"
-
-        await pedestrian_controller({ road: road })
-        console.log("STATUS: ", STATUS)
-        await sleep(2000)
-      }
-
-    }
-
-    else if (road === 3) {
-      if (STATUS.s34 === "GREEN") {
-        console.log("No Worries")
-
-        STATUS.s12 = "RED"
-
-        releaseLock()
-        pedestrian_controller({ road: road })
-
-        console.log("STATUS: ", STATUS)
-        await sleep(2000)
-      }
-      else {
-        STATUS.s34 = "YELLOW"
-
-        await sleep(2000)
-
-        STATUS.s34 = "GREEN"
-
-        STATUS.s12 = "RED"
-
-        await pedestrian_controller({ road: road })
-
-        console.log("STATUS: ", STATUS)
-        await sleep(2000)
-      }
-    }
-
-    return { ...STATUS, roadToGreen: road }
-
-  }
-  catch (err) {
-    console.log("Error: ", err)
-  }
-  finally {
-    console.log("SIGNAL CONTROLLER RELEASING LOCK")
-    releaseLock()
-    console.log("SIGNAL CONTROLLER RELEASED LOCK")
-  }
-}
-
-// Generate Random Function 
-const signal_manipulator = () => {
-  const random = parseInt(Math.floor(Math.random() * 4) + 1)
-  return random;
-}
-
-const pedestrian_controller = async ({ road }) => {
-  try {
-
-    if (road === 1) {
-      STATUS.p12 = "GREEN"
-      STATUS.p34 = "RED"
-    }
-    else if (road === 3) {
-      STATUS.p12 = "RED"
-      STATUS.p34 = "GREEN"
-    }
-  }
-  catch (err) {
-    console.log("Error: ", err)
-  }
-}
-
 
 await server.register_functions([
   {
-    function_name: "signal_controller",
-    function_block: signal_controller
+    function_name: "get_current_status",
+    function_block: get_current_status,
   },
-  {
-    function_name: "signal_manipulator",
-    function_block: signal_manipulator
-  },
-  {
-    function_name: "pedestrian_controller",
-    function_block: pedestrian_controller
-  },
-])
+  { function_name: "signal_controller", function_block: signal_controller },
+  { function_name: "signal_manipulator", function_block: signal_manipulator },
+  { function_name: "pedestrian_controller", function_block: pedestrian_controller },
+]);
 
 await server.start();
+startSignalLoop();
+console.log("Task 5 Traffic Controller running with mutual exclusion on port 3000");

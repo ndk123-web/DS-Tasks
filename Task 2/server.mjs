@@ -18,6 +18,11 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // Public RPC: get current status
 const get_current_status = () => ({ result: { ...STATUS }, message: "success" });
 
+// Additional RPCs to match assignment API
+const signal_controller = async () => ({ result: { ...STATUS }, message: "success" });
+const signal_manipulator = () => (STATUS.s12 === "GREEN" || STATUS.s12 === "YELLOW" ? 3 : 1);
+const pedestrian_controller = ({ road }) => ({ result: { ok: true, road }, message: "noop" });
+
 // Background loop to alternate signals automatically
 let loopRunning = false;
 const startSignalLoop = async () => {
@@ -53,6 +58,9 @@ await server.register_functions([
     function_name: "get_current_status",
     function_block: get_current_status,
   },
+  { function_name: "signal_controller", function_block: signal_controller },
+  { function_name: "signal_manipulator", function_block: signal_manipulator },
+  { function_name: "pedestrian_controller", function_block: pedestrian_controller },
 ]);
 
 await server.start();

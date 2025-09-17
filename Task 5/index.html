@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Traffic Controller - Task 5 (Mutex)</title>
+    <style>
+      body { font-family: Arial, sans-serif; background: #101418; color: #e8e8e8; margin: 0; }
+      .wrap { max-width: 800px; margin: 40px auto; padding: 0 16px; }
+      h1 { font-size: 22px; margin-bottom: 16px; color: #79ffa8; }
+      .board { background: #161b22; border: 1px solid #2a2f36; border-radius: 10px; padding: 24px; }
+      .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+      .tile { text-align: center; padding: 16px; border: 1px solid #2a2f36; border-radius: 10px; }
+      .label { font-size: 14px; color: #9aa4af; margin-bottom: 10px; }
+      .signal-light { width: 80px; height: 80px; border-radius: 50%; margin: 0 auto; display: grid; place-items: center; font-weight: bold; border: 3px solid #222; color: #000; }
+      .red { background: #ff4757; color: #fff; box-shadow: 0 0 16px #ff4757; }
+      .yellow { background: #ffa502; box-shadow: 0 0 16px #ffa502; }
+      .green { background: #2ed573; box-shadow: 0 0 16px #2ed573; }
+      .footer { margin-top: 14px; font-size: 12px; color: #6b7280; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Traffic Controller (Mutex: Road12 ↔ Road34)</h1>
+      <div class="board">
+        <div class="grid">
+          <div class="tile">
+            <div class="label">Road 12</div>
+            <div id="signal12" class="signal-light green">GREEN</div>
+          </div>
+          <div class="tile">
+            <div class="label">Road 34</div>
+            <div id="signal34" class="signal-light red">RED</div>
+          </div>
+          <div class="tile">
+            <div class="label">Pedestrian 12</div>
+            <div id="ped12" class="signal-light red">RED</div>
+          </div>
+          <div class="tile">
+            <div class="label">Pedestrian 34</div>
+            <div id="ped34" class="signal-light green">GREEN</div>
+          </div>
+        </div>
+        <div class="footer">Deterministic alternation with mutual exclusion: 8s GREEN, 2s YELLOW per road.</div>
+      </div>
+    </div>
+
+    <script type="module" src="./client.mjs"></script>
+  </body>
+  </html>

@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "ndk-rpc-cluster": "^1.0.7"
+  }
+}
